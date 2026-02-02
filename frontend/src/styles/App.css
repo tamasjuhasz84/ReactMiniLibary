@@ -1,0 +1,214 @@
+:root {
+  /* “tört fehér / krém” háttér + finom kártyaszínek */
+  --bg: #fbf7ee; /* krém tört fehér */
+  --card: #ffffffcc; /* enyhén áttetsző fehér kártya */
+  --border: #e6dfd2;
+  --text: #1f1f1f;
+  --muted: #6a6a6a;
+  --danger: #b00020;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, Arial, sans-serif;
+  margin: 24px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+input,
+select,
+button {
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--text);
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #cdbf9b;
+  box-shadow: 0 0 0 3px rgba(205, 191, 155, 0.35);
+}
+
+button {
+  cursor: pointer;
+  background: #fff;
+}
+
+button:hover {
+  filter: brightness(0.98);
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 12px;
+  background: var(--card);
+  backdrop-filter: blur(6px);
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.danger {
+  color: var(--danger);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+th,
+td {
+  border-bottom: 1px solid #eee;
+  padding: 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.actions button {
+  margin-right: 8px;
+}
+
+.input-wide {
+  flex: 1;
+  min-width: 220px;
+}
+
+.search {
+  min-width: 260px;
+}
+
+.date {
+  width: 220px;
+}
+
+.borrowed-hint {
+  align-self: center;
+}
+
+/* ---------------------------
+   MOBIL OPTIMALIZÁLÁS
+   --------------------------- */
+@media (max-width: 680px) {
+  body {
+    margin: 12px;
+  }
+
+  .topbar h1 {
+    font-size: 20px;
+    margin: 0;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  /* űrlap sorok: oszlopba */
+  .row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .input-wide,
+  .search,
+  .date,
+  input,
+  select,
+  button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .borrowed-hint {
+    align-self: flex-start;
+  }
+
+  /* táblázat -> kártya lista */
+  table,
+  thead,
+  tbody,
+  th,
+  td,
+  tr {
+    display: block;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody tr {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px;
+    margin-top: 10px;
+  }
+
+  tbody td {
+    border: 0;
+    padding: 6px 0;
+  }
+
+  /* címkék a cellák elé */
+  tbody td:nth-child(1)::before {
+    content: "Cím: ";
+    font-weight: 600;
+  }
+  tbody td:nth-child(2)::before {
+    content: "Író: ";
+    font-weight: 600;
+  }
+  tbody td:nth-child(3)::before {
+    content: "Státusz: ";
+    font-weight: 600;
+  }
+  tbody td:nth-child(4)::before {
+    content: "Részletek: ";
+    font-weight: 600;
+  }
+
+  /* gombok: rácsban, kényelmes tapp */
+  td.actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding-top: 8px;
+  }
+
+  td.actions button {
+    margin-right: 0;
+  }
+
+  /* ha 3 gomb van (kölcsönben), az első (Visszahozva) legyen full */
+  td.actions button:first-child {
+    grid-column: 1 / -1;
+  }
+}
