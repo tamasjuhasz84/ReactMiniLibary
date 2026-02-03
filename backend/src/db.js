@@ -26,6 +26,7 @@ function normalizeBook(row) {
     status: row.status,
     borrowedBy: row.borrowed_by ?? "",
     borrowedSince: row.borrowed_since ?? "",
+    coverUrl: row.cover_url ?? "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -44,6 +45,20 @@ function sanitizeInput(input) {
     input.borrowedSince ?? input.borrowed_since ?? "",
   ).trim();
 
+  // Új mező: coverUrl
+  let coverUrl = "";
+  if (typeof input.coverUrl === "string") {
+    coverUrl = input.coverUrl.trim();
+    if (coverUrl.length > 500) {
+      throw new Error("A borítókép URL túl hosszú.");
+    }
+  } else if (typeof input.cover_url === "string") {
+    coverUrl = input.cover_url.trim();
+    if (coverUrl.length > 500) {
+      throw new Error("A borítókép URL túl hosszú.");
+    }
+  }
+
   if (status === "otthon") {
     borrowedBy = "";
     borrowedSince = "";
@@ -54,7 +69,7 @@ function sanitizeInput(input) {
     if (!borrowedSince) borrowedSince = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   }
 
-  return { title, author, status, borrowedBy, borrowedSince };
+  return { title, author, status, borrowedBy, borrowedSince, coverUrl };
 }
 
 export async function initDb() {
@@ -66,10 +81,20 @@ export async function initDb() {
       status TEXT NOT NULL CHECK (status IN ('otthon','kolcsonben')),
       borrowed_by TEXT,
       borrowed_since TEXT,
+      cover_url TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
   `);
+
+  // Add cover_url column if it doesn't exist (idempotens, nem törik meg ha már létezik)
+  try {
+    await pool.query(
+      `ALTER TABLE books ADD COLUMN IF NOT EXISTS cover_url TEXT;`,
+    );
+  } catch (e) {
+    // ignore if already exists or not supported
+  }
 
   await pool.query(
     `CREATE INDEX IF NOT EXISTS books_updated_at_idx ON books (updated_at DESC);`,
@@ -96,8 +121,8 @@ export async function createBook(input) {
 
   const { rows } = await pool.query(
     `
-    INSERT INTO books (title, author, status, borrowed_by, borrowed_since, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    INSERT INTO books (title, author, status, borrowed_by, borrowed_since, cover_url, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING *
     `,
     [
@@ -106,6 +131,7 @@ export async function createBook(input) {
       data.status,
       data.borrowedBy,
       data.borrowedSince,
+      data.coverUrl,
       ts,
       ts,
     ],
@@ -129,8 +155,9 @@ export async function updateBook(id, input) {
         status = $3,
         borrowed_by = $4,
         borrowed_since = $5,
-        updated_at = $6
-    WHERE id = $7
+        cover_url = $6,
+        updated_at = $7
+    WHERE id = $8
     RETURNING *
     `,
     [
@@ -139,6 +166,7 @@ export async function updateBook(id, input) {
       data.status,
       data.borrowedBy,
       data.borrowedSince,
+      data.coverUrl,
       ts,
       id,
     ],

@@ -10,6 +10,7 @@ type Book = {
   status: BookStatus;
   borrowedBy?: string | null;
   borrowedSince?: string | null;
+  coverUrl?: string | null;
 };
 
 type BookForm = {
@@ -18,6 +19,7 @@ type BookForm = {
   status: BookStatus;
   borrowedBy: string;
   borrowedSince: string;
+  coverUrl: string;
 };
 
 const BASE_URL = import.meta.env.VITE_API_BASE ?? "";
@@ -40,9 +42,12 @@ const emptyForm: BookForm = {
   status: "otthon",
   borrowedBy: "",
   borrowedSince: "",
+  coverUrl: "",
 };
 
 export default function MiniReactLibrary() {
+  const [sortBy, setSortBy] = useState<string>("");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [books, setBooks] = useState<Book[]>([]);
   const [q, setQ] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -53,16 +58,38 @@ export default function MiniReactLibrary() {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return books;
-    return books.filter((b) => {
-      const bb = (b.borrowedBy ?? "").toLowerCase();
-      return (
-        b.title.toLowerCase().includes(s) ||
-        b.author.toLowerCase().includes(s) ||
-        bb.includes(s)
-      );
-    });
-  }, [books, q]);
+    let result = books;
+    if (s) {
+      result = result.filter((b) => {
+        const bb = (b.borrowedBy ?? "").toLowerCase();
+        return (
+          b.title.toLowerCase().includes(s) ||
+          b.author.toLowerCase().includes(s) ||
+          bb.includes(s)
+        );
+      });
+    }
+    if (sortBy) {
+      result = [...result].sort((a, b) => {
+        let va = "";
+        let vb = "";
+        if (sortBy === "title") {
+          va = a.title ?? "";
+          vb = b.title ?? "";
+        } else if (sortBy === "author") {
+          va = a.author ?? "";
+          vb = b.author ?? "";
+        } else if (sortBy === "status") {
+          va = a.status ?? "";
+          vb = b.status ?? "";
+        }
+        if (va < vb) return sortDir === "asc" ? -1 : 1;
+        if (va > vb) return sortDir === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+    return result;
+  }, [books, q, sortBy, sortDir]);
 
   async function load() {
     setError("");
@@ -84,6 +111,7 @@ export default function MiniReactLibrary() {
       status: b.status,
       borrowedBy: (b.borrowedBy ?? "") as string,
       borrowedSince: (b.borrowedSince ?? "") as string,
+      coverUrl: (b.coverUrl ?? "") as string,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -231,6 +259,18 @@ export default function MiniReactLibrary() {
               </div>
             </div>
           )}
+          <div className="row">
+            <input
+              value={form.coverUrl}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, coverUrl: e.target.value }))
+              }
+              placeholder="Borítókép URL"
+              className="input-wide"
+              type="url"
+              maxLength={500}
+            />
+          </div>
 
           <div className="row">
             <button type="submit">{editingId ? "Mentés" : "Hozzáadás"}</button>
@@ -261,10 +301,50 @@ export default function MiniReactLibrary() {
           <table>
             <thead>
               <tr>
-                <th>Cím</th>
-                <th>Író</th>
-                <th>Státusz</th>
+                <th
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    if (sortBy === "title") {
+                      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                    } else {
+                      setSortBy("title");
+                      setSortDir("asc");
+                    }
+                  }}
+                >
+                  Cím{" "}
+                  {sortBy === "title" ? (sortDir === "asc" ? "▲" : "▼") : ""}
+                </th>
+                <th
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    if (sortBy === "author") {
+                      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                    } else {
+                      setSortBy("author");
+                      setSortDir("asc");
+                    }
+                  }}
+                >
+                  Író{" "}
+                  {sortBy === "author" ? (sortDir === "asc" ? "▲" : "▼") : ""}
+                </th>
+                <th
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    if (sortBy === "status") {
+                      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                    } else {
+                      setSortBy("status");
+                      setSortDir("asc");
+                    }
+                  }}
+                >
+                  Státusz{" "}
+                  {sortBy === "status" ? (sortDir === "asc" ? "▲" : "▼") : ""}
+                </th>
                 <th>Részletek</th>
+                <th>Borító</th>
                 <th></th>
               </tr>
             </thead>
@@ -281,6 +361,30 @@ export default function MiniReactLibrary() {
                         {(b.borrowedBy ?? "") as string} •{" "}
                         {(b.borrowedSince ?? "") as string}
                       </span>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
+                  <td>
+                    {b.coverUrl && b.coverUrl.trim() ? (
+                      <img
+                        src={b.coverUrl}
+                        alt="Borítókép"
+                        style={{
+                          height: 40,
+                          maxWidth: 60,
+                          objectFit: "contain",
+                          cursor: "pointer",
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(
+                            b.coverUrl!,
+                            "_blank",
+                            "width=500,height=700,noopener",
+                          );
+                        }}
+                      />
                     ) : (
                       <span className="muted">—</span>
                     )}
